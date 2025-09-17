@@ -4,7 +4,7 @@ import '../controller/cart_controller.dart';
 import '../model/cart/cart_item.dart';
 
 class ProductCard extends StatelessWidget {
-  final String productId; // Unique ID (Firestore ID ya koi bhi)
+  final String productId;
   final String name;
   final String imageUrl;
   final double price;
@@ -14,7 +14,7 @@ class ProductCard extends StatelessWidget {
 
   const ProductCard({
     super.key,
-    this.productId = "", // default diya taaki error na aaye
+    this.productId = "",
     required this.name,
     required this.imageUrl,
     required this.price,
@@ -26,8 +26,6 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.put(CartController());
-
-    // Local reactive variable for heart icon
     final RxBool isFav = false.obs;
 
     return InkWell(
@@ -36,7 +34,7 @@ class ProductCard extends StatelessWidget {
         elevation: 2,
         clipBehavior: Clip.hardEdge,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Image Section
             AspectRatio(
@@ -47,95 +45,103 @@ class ProductCard extends StatelessWidget {
               ),
             ),
 
-            // Text + Buttons Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name
-                  Text(
-                    name,
-                    style: const TextStyle(fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  const SizedBox(height: 2),
-
-                  // Price
-                  Text(
-                    'Rs : $price',
-                    style: const TextStyle(fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  const SizedBox(height: 2),
-
-                  // Offer + Wishlist + Cart Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Offer Tag
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          offerTag,
-                          style: const TextStyle(color: Colors.white, fontSize: 11),
-                        ),
-                      ),
-
-                      // Wishlist + Add to Cart
-                      Row(
-                        children: [
-                          if (onWishlistTap != null)
-                            Obx(() {
-                              return InkWell(
-                                onTap: () {
-                                  isFav.value = !isFav.value;
-                                  if (onWishlistTap != null) onWishlistTap!();
-                                },
-                                child: Icon(
-                                  isFav.value
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: isFav.value ? Colors.red : Colors.grey,
-                                  size: 28, // slightly bigger
-                                ),
-                              );
-                            }),
-
-                          const SizedBox(width: 6),
-
-                          IconButton(
-                            icon: const Icon(Icons.add_shopping_cart,
-                                color: Colors.blue, size: 20),
-                            onPressed: () {
-                              final item = CartItem(
-                                productId: productId.isNotEmpty ? productId : name,
-                                name: name,
-                                price: price,
-                                image: imageUrl,
-                              );
-
-                              cartController.addToCart(item);
-
-                              Get.snackbar(
-                                "Added to Cart",
-                                "$name added successfully!",
-                                snackPosition: SnackPosition.BOTTOM,
-                                duration: const Duration(seconds: 2),
-                              );
-                            },
+            // Bottom Info Section
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Name & Price
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      )
-                    ],
-                  ),
-                ],
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Rs : $price',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.deepPurple,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Offer + Wishlist + Cart Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Offer Tag
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            offerTag,
+                            style: const TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ),
+
+                        // Wishlist + Add to Cart
+                        Row(
+                          children: [
+                            if (onWishlistTap != null)
+                              Obx(() {
+                                return InkWell(
+                                  onTap: () {
+                                    isFav.value = !isFav.value;
+                                    onWishlistTap!();
+                                  },
+                                  child: Icon(
+                                    isFav.value ? Icons.favorite : Icons.favorite_border,
+                                    color: isFav.value ? Colors.red : Colors.grey,
+                                    size: 26, // slightly smaller
+                                  ),
+                                );
+                              }),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.add_shopping_cart,
+                                  color: Colors.blue, size: 20),
+                              onPressed: () {
+                                final item = CartItem(
+                                  productId: productId.isNotEmpty ? productId : name,
+                                  name: name,
+                                  price: price,
+                                  image: imageUrl,
+                                );
+                                cartController.addToCart(item);
+                                Get.snackbar(
+                                  "Added to Cart",
+                                  "$name added successfully!",
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  duration: const Duration(seconds: 2),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

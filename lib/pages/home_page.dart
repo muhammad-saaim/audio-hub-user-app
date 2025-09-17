@@ -13,13 +13,11 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wishlistCtrl = Get.put(WishlistController()); // Wishlist controller instance
+    final wishlistCtrl = Get.put(WishlistController());
 
     return GetBuilder<HomeController>(builder: (ctrl) {
       return RefreshIndicator(
-        onRefresh: () async {
-          ctrl.fetchProducts();
-        },
+        onRefresh: () async => ctrl.fetchProducts(),
         child: Scaffold(
           appBar: AppBar(
             title: const Text(
@@ -33,26 +31,41 @@ class HomePage extends StatelessWidget {
           ),
           body: Column(
             children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  onChanged: (value) => ctrl.updateSearchQuery(value),
+                  decoration: InputDecoration(
+                    hintText: 'Search products...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+
+              // Categories horizontal
               SizedBox(
                 height: 50,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: ctrl.productCategories.length,
                   itemBuilder: (context, index) {
-                    return InkWell(
-                      onTap: () {
-                        ctrl.filterByCategory(ctrl.productCategories[index].name ?? '');
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Chip(
-                          label: Text(ctrl.productCategories[index].name ?? 'Error'),
-                        ),
+                    final cat = ctrl.productCategories[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: ChoiceChip(
+                        label: Text(cat.name ?? 'Error'),
+                        selected: ctrl.selectedCategory == cat.name,
+                        onSelected: (_) => ctrl.filterByCategory(cat.name ?? ''),
                       ),
                     );
                   },
                 ),
               ),
+
+              // Sort + Brand filters
               Row(
                 children: [
                   Expanded(
@@ -61,7 +74,7 @@ class HomePage extends StatelessWidget {
                       selectedItemText: 'Sort',
                       onSelected: (selected) {
                         ctrl.sortByPrice(
-                            ascending: selected == 'Rs : low to high' ? true : false);
+                            ascending: selected == 'Rs : low to high');
                       },
                     ),
                   ),
@@ -76,8 +89,11 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
+
+              // Product grid
               Expanded(
                 child: GridView.builder(
+                  padding: const EdgeInsets.all(8),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 0.8,
@@ -89,14 +105,11 @@ class HomePage extends StatelessWidget {
                     final product = ctrl.productShowInUi[index];
                     return ProductCard(
                       name: product.name ?? 'No name',
-                      imageUrl: product.image ?? 'url',
+                      imageUrl: product.image ?? '',
                       price: product.price ?? 0,
                       offerTag: '30% off',
-                      onTap: () {
-                        Get.to(ProductDescriptionPage(), arguments: {'data': product});
-                      },
+                      onTap: () => Get.to(ProductDescriptionPage(), arguments: {'data': product}),
                       onWishlistTap: () {
-                        // Product object ko Map me convert karke wishlist me add karo
                         wishlistCtrl.addToWishlist({
                           'productId': product.id,
                           'name': product.name,

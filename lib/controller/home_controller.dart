@@ -14,9 +14,10 @@ class HomeController extends GetxController {
   List<Product> productShowInUi = [];
   List<ProductCategory> productCategories = [];
 
-  // New filters
+  // Filters
   String? selectedCategory;
   List<String> selectedBrands = [];
+  String searchQuery = ""; // Search query
 
   @override
   Future<void> onInit() async {
@@ -35,7 +36,7 @@ class HomeController extends GetxController {
           .toList();
       products.clear();
       products.assignAll(retrievedProducts);
-      productShowInUi.assignAll(products);
+      applyFilters(); // <-- apply filters including search
       Get.snackbar('Success', 'Products fetched successfully',
           colorText: Colors.green);
     } catch (e) {
@@ -63,19 +64,24 @@ class HomeController extends GetxController {
     }
   }
 
-  // category filter
+  // Filters
   filterByCategory(String category) {
     selectedCategory = category;
     applyFilters();
   }
 
-  // brand filter
   filterByBrand(List<String> brands) {
     selectedBrands = brands;
     applyFilters();
   }
 
-  // apply both filters together
+  // Search
+  updateSearchQuery(String query) {
+    searchQuery = query.toLowerCase();
+    applyFilters();
+  }
+
+  // Apply filters + search
   void applyFilters() {
     productShowInUi = products.where((product) {
       final matchesCategory =
@@ -83,21 +89,19 @@ class HomeController extends GetxController {
       final matchesBrand = selectedBrands.isEmpty ||
           selectedBrands.map((b) => b.toLowerCase()).contains(
               (product.brand ?? "").toLowerCase());
-      return matchesCategory && matchesBrand;
+      final matchesSearch = product.name != null &&
+          product.name!.toLowerCase().contains(searchQuery);
+      return matchesCategory && matchesBrand && matchesSearch;
     }).toList();
     update();
   }
 
+  // Sort
   sortByPrice({required bool ascending}) {
-    List<Product> sortedProducts = List<Product>.from(productShowInUi);
-    sortedProducts.sort((a, b) {
-      if (ascending) {
-        return a.price!.compareTo(b.price!);
-      } else {
-        return b.price!.compareTo(a.price!);
-      }
+    productShowInUi.sort((a, b) {
+      if (ascending) return a.price!.compareTo(b.price!);
+      return b.price!.compareTo(a.price!);
     });
-    productShowInUi = sortedProducts;
     update();
   }
 }
