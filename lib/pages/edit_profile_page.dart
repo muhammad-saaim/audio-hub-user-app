@@ -10,7 +10,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final LoginController loginCtrl = Get.find(); // Existing controller
+  final LoginController loginCtrl = Get.find();
 
   late TextEditingController nameCtrl;
   late TextEditingController emailCtrl;
@@ -49,6 +49,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 labelText: "Email",
                 border: OutlineInputBorder(),
               ),
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 12),
             TextField(
@@ -67,10 +68,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   backgroundColor: Colors.deepPurple,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: const Text(
-                  "Save Changes",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
                 onPressed: () async {
                   await loginCtrl.updateProfile(
                     name: nameCtrl.text.trim(),
@@ -79,6 +76,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   );
                   Navigator.pop(context);
                 },
+                child: const Text(
+                  "Save Changes",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
               ),
             ),
           ],

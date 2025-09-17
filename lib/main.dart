@@ -1,6 +1,7 @@
 import 'package:audio_hub_client/controller/login_controller.dart';
 import 'package:audio_hub_client/controller/home_controller.dart';
 import 'package:audio_hub_client/controller/cart_controller.dart';
+import 'package:audio_hub_client/controller/navigation_controller.dart';
 import 'package:audio_hub_client/pages/register_page.dart';
 import 'package:audio_hub_client/pages/login_page.dart';
 import 'package:audio_hub_client/pages/splash_page.dart';
@@ -15,10 +16,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: firebaseOptions);
 
-  // Global controllers
-  Get.put(LoginController());
-  Get.put(HomeController());
-  Get.put(CartController()); // ✅ CartController injected globally
+  // Global controllers - make them permanent to preserve state
+  Get.put<LoginController>(LoginController(), permanent: true);
+  Get.put<HomeController>(HomeController(), permanent: true);
+  Get.put<CartController>(CartController(), permanent: true);
+  Get.put<NavigationController>(NavigationController(), permanent: true);
 
   runApp(const MyApp());
 }

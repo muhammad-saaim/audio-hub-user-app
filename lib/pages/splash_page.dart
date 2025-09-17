@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'login_page.dart';
+import '../controller/login_controller.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -14,25 +14,29 @@ class _SplashPageState extends State<SplashPage>
   late AnimationController _controller;
   late Animation<double> _fadeIn;
 
+  final LoginController loginCtrl = Get.find<LoginController>();
+
   @override
   void initState() {
     super.initState();
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 3),
     );
 
     _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-
     _controller.forward();
 
     _navigateNext();
   }
 
   void _navigateNext() async {
-    await Future.delayed(const Duration(seconds: 5)); // 3 sec splash
-    Get.offAll(() => const LoginPage()); // Hamesha LoginPage par jao
+    // Wait for splash animation
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Check user login state & navigate accordingly
+    await loginCtrl.initializeUser();
   }
 
   @override
@@ -58,14 +62,12 @@ class _SplashPageState extends State<SplashPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo ya Icon
-              Icon(
+              const Icon(
                 Icons.headphones_rounded,
                 size: 100,
                 color: Colors.white,
               ),
               const SizedBox(height: 20),
-              // App Title
               const Text(
                 "Audio Hub",
                 style: TextStyle(
@@ -76,16 +78,14 @@ class _SplashPageState extends State<SplashPage>
                 ),
               ),
               const SizedBox(height: 10),
-              // Tagline
               const Text(
-                "  Your one-stop shop for premium audio gear 🎧",
+                "Your one-stop shop for premium audio gear 🎧",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
                   color: Colors.white70,
                 ),
               ),
-
               const SizedBox(height: 50),
               const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),

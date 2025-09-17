@@ -27,6 +27,9 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final CartController cartController = Get.put(CartController());
 
+    // Local reactive variable for heart icon
+    final RxBool isFav = false.obs;
+
     return InkWell(
       onTap: onTap,
       child: Card(
@@ -89,11 +92,21 @@ class ProductCard extends StatelessWidget {
                       Row(
                         children: [
                           if (onWishlistTap != null)
-                            InkWell(
-                              onTap: onWishlistTap,
-                              child: const Icon(Icons.favorite_border,
-                                  color: Colors.red, size: 18),
-                            ),
+                            Obx(() {
+                              return InkWell(
+                                onTap: () {
+                                  isFav.value = !isFav.value;
+                                  if (onWishlistTap != null) onWishlistTap!();
+                                },
+                                child: Icon(
+                                  isFav.value
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFav.value ? Colors.red : Colors.grey,
+                                  size: 28, // slightly bigger
+                                ),
+                              );
+                            }),
 
                           const SizedBox(width: 6),
 

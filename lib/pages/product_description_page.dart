@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../model/product/product.dart';
 import '../controller/order_controller.dart';
 
-
 class ProductDescriptionPage extends StatefulWidget {
   const ProductDescriptionPage({super.key});
 
@@ -19,7 +18,6 @@ class _ProductDescriptionPageState extends State<ProductDescriptionPage> {
     final arguments = Get.arguments as Map<String, dynamic>;
     Product product = arguments['data'];
 
-    // Ensure correct import and class name
     final orderCtrl = Get.put(OrderController());
 
     return Scaffold(
@@ -110,11 +108,9 @@ class _ProductDescriptionPageState extends State<ProductDescriptionPage> {
                     return;
                   }
 
-                  // Create order (dummy customer/phone for now)
+                  // Create order for the current logged-in user
                   await orderCtrl.createOrder(
-                    customer: "test customer",
                     address: addressCtrl.text.trim(),
-                    phone: "88888888",
                     item: product.name ?? '',
                     price: "${product.price ?? ''}",
                   );

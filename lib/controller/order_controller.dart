@@ -7,55 +7,68 @@ class OrderController extends GetxController {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
 
-  var isLoading = false.obs;
-  var userOrders = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> userOrders = <Map<String, dynamic>>[].obs;
+  var isLoading = false.obs; // reactive loading state
+
+  String get userId => auth.currentUser?.uid ?? "";
 
   @override
   void onInit() {
     super.onInit();
-    fetchUserOrders();
+    if (userId.isNotEmpty) fetchUserOrders();
   }
 
-  // Create order
+  /// Create a new order
   Future<void> createOrder({
-    required String customer,
-    required String address,
-    required String phone,
     required String item,
     required String price,
+    required String address,
   }) async {
-    try {
-      String orderId = firestore.collection("orders").doc().id;
+    if (userId.isEmpty) return;
 
-      await firestore.collection("orders").doc(orderId).set({
-        "customer": customer,
-        "address": address,
-        "phone": phone,
+    try {
+      String orderId = firestore
+          .collection('users')
+          .doc(userId)
+          .collection('orders')
+          .doc()
+          .id;
+
+      final orderData = {
         "item": item,
         "price": price,
-        "transactionId": orderId, // dummy transaction
-        "date time": DateFormat("dd-MM-yyyy").format(DateTime.now()),
-      });
+        "address": address,
+        "transactionId": orderId,
+        "dateTime": DateFormat("dd-MM-yyyy").format(DateTime.now()),
+      };
+
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .collection('orders')
+          .doc(orderId)
+          .set(orderData);
+
+      // Add locally to reactive list
+      userOrders.insert(0, orderData);
 
       Get.snackbar("Success", "Order placed successfully ✅");
-      fetchUserOrders(); // Refresh orders list
-      Get.offAllNamed("/home");
     } catch (e) {
       Get.snackbar("Error", e.toString());
     }
   }
 
-  // Fetch orders for current logged-in user
+  /// Fetch all orders of the current user
   Future<void> fetchUserOrders() async {
+    if (userId.isEmpty) return;
+
     try {
-      final user = auth.currentUser;
-      if (user == null) return; // no logged-in user
-
       isLoading.value = true;
-
       QuerySnapshot snapshot = await firestore
-          .collection("orders")
-          .where("customer", isEqualTo: user.displayName ?? "test customer")
+          .collection('users')
+          .doc(userId)
+          .collection('orders')
+          .orderBy('dateTime', descending: true)
           .get();
 
       userOrders.value =
@@ -65,5 +78,24 @@ class OrderController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Clear orders locally and optionally in Firestore (used on logout)
+  Future<void> clearOrders({bool deleteFromFirestore = false}) async {
+    if (deleteFromFirestore && userId.isNotEmpty) {
+      try {
+        final snapshot = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('orders')
+            .get();
+        for (var doc in snapshot.docs) {
+          await doc.reference.delete();
+        }
+      } catch (e) {
+        Get.snackbar("Error", "Failed to clear orders from Firestore: $e");
+      }
+    }
+    userOrders.clear();
   }
 }
