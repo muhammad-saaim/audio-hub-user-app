@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/cart_controller.dart';
+import '../controller/order_controller.dart';
 import '../model/cart/cart_item.dart';
 
 class CartPage extends StatelessWidget {
   CartPage({super.key});
 
   final CartController cartController = Get.find<CartController>();
+  final OrderController orderController = Get.put(OrderController());
+  final TextEditingController addressController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -37,33 +40,26 @@ class CartPage extends StatelessWidget {
                       title: Text(item.name),
                       subtitle: Text("Rs ${item.price}"),
                       trailing: SizedBox(
-                        width: 150, // Enough width for all buttons
+                        width: 150,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            // Remove button
                             IconButton(
                               icon: const Icon(Icons.remove, size: 20),
                               onPressed: () => cartController.updateQuantity(
                                   item.productId, item.quantity - 1),
                             ),
-
-                            // Quantity text (Flexible for responsive layout)
                             Flexible(
                               child: Text(
                                 item.quantity.toString(),
                                 textAlign: TextAlign.center,
                               ),
                             ),
-
-                            // Add button
                             IconButton(
                               icon: const Icon(Icons.add, size: 20),
                               onPressed: () => cartController.updateQuantity(
                                   item.productId, item.quantity + 1),
                             ),
-
-                            // Delete button
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () =>
@@ -78,7 +74,7 @@ class CartPage extends StatelessWidget {
               ),
             ),
 
-            // Total + Checkout
+            // Total + Buy Now
             Container(
               padding: const EdgeInsets.all(12),
               color: Colors.grey[200],
@@ -92,13 +88,83 @@ class CartPage extends StatelessWidget {
                   )),
                   ElevatedButton(
                     onPressed: () {
-                      Get.snackbar(
-                        "Checkout",
-                        "Checkout clicked!",
-                        snackPosition: SnackPosition.BOTTOM,
+                      if (cartController.cartItems.isEmpty) {
+                        Get.snackbar(
+                          'Cart Empty',
+                          'Add items to cart before checkout',
+                          snackPosition: SnackPosition.BOTTOM,
+                          colorText: Colors.red,
+                        );
+                        return;
+                      }
+
+                      double total = cartController.totalPrice;
+
+                      // Show dialog with editable address
+                      Get.dialog(
+                        AlertDialog(
+                          title: const Text('Confirm Order'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text("Total: Rs $total"),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: addressController,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  labelText: 'Billing Address',
+                                  hintText: 'Enter your address',
+                                ),
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                if (addressController.text.trim().isEmpty) {
+                                  Get.snackbar(
+                                    'Address Required',
+                                    'Please enter a billing address',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                    colorText: Colors.red,
+                                  );
+                                  return;
+                                }
+
+                                // Create order for each cart item
+                                for (var item in cartController.cartItems) {
+                                  await orderController.createOrder(
+                                    item: item.name,
+                                    price: item.price.toString(),
+                                    address: addressController.text.trim(),
+                                  );
+                                }
+
+                                // Clear cart both locally and from Firestore
+                                await cartController.clearCart();
+
+                                Get.back(); // close dialog
+
+                                Get.snackbar(
+                                  'Order Placed',
+                                  'Your order has been placed successfully!',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  colorText: Colors.green,
+                                );
+                              },
+                              child: const Text('Confirm'),
+                            ),
+                          ],
+                        ),
                       );
                     },
-                    child: const Text("Checkout"),
+                    child: const Text("Buy Now"),
                   ),
                 ],
               ),

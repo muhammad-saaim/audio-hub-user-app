@@ -17,9 +17,15 @@ class CartController extends GetxController {
     if (userId.isNotEmpty) loadCart();
   }
 
+  /// Load cart from Firestore
   Future<void> loadCart() async {
     if (userId.isEmpty) return;
-    final doc = await firestore.collection('users').doc(userId).collection('cart').doc('cart').get();
+    final doc = await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('cart')
+        .doc('cart')
+        .get();
     if (doc.exists && doc.data() != null && doc.data()!['items'] != null) {
       final List items = doc.data()!['items'];
       cartItems.value = items.map((e) => CartItem.fromMap(e)).toList();
@@ -28,10 +34,16 @@ class CartController extends GetxController {
     }
   }
 
+  /// Save current cart to Firestore
   Future<void> saveCart() async {
     if (userId.isEmpty) return;
     final items = cartItems.map((e) => e.toMap()).toList();
-    await firestore.collection('users').doc(userId).collection('cart').doc('cart').set({'items': items});
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('cart')
+        .doc('cart')
+        .set({'items': items});
   }
 
   void addToCart(CartItem item) {
@@ -66,7 +78,15 @@ class CartController extends GetxController {
   double get totalPrice =>
       cartItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
 
-  void clearCart() {
+  /// Clear cart both in memory and Firestore
+  Future<void> clearCart() async {
     cartItems.clear();
+    if (userId.isEmpty) return;
+    await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('cart')
+        .doc('cart')
+        .delete();
   }
 }
