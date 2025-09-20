@@ -32,12 +32,28 @@ class OrdersPage extends StatelessWidget {
           itemBuilder: (context, index) {
             final order = orderCtrl.userOrders[index];
 
-            String status = order['status'] ?? "Pending";
-            Color statusColor = (status == "Delivered")
-                ? Colors.green
-                : (status == "Cancelled")
-                ? Colors.red
-                : Colors.orange;
+            // Normalize status
+            String status = (order['status'] ?? 'Pending').toString().toLowerCase();
+            String displayStatus = status[0].toUpperCase() + status.substring(1);
+
+            // Determine status color
+            Color statusColor;
+            switch (status) {
+              case 'approved':
+                statusColor = Colors.green;
+                break;
+              case 'rejected':
+                statusColor = Colors.red;
+                break;
+              case 'cancelled':
+                statusColor = Colors.red;
+                break;
+              case 'delivered':
+                statusColor = Colors.green;
+                break;
+              default: // pending or any unknown
+                statusColor = Colors.orange;
+            }
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
@@ -55,7 +71,7 @@ class OrdersPage extends StatelessWidget {
                     Text("Date: ${order['dateTime'] ?? ''}"),
                     Text("Address: ${order['address'] ?? ''}"),
                     Text(
-                      "Status: $status",
+                      "Status: $displayStatus",
                       style: TextStyle(
                         color: statusColor,
                         fontWeight: FontWeight.bold,
@@ -66,7 +82,7 @@ class OrdersPage extends StatelessWidget {
                 trailing: Wrap(
                   spacing: 5,
                   children: [
-                    if (status == "Pending")
+                    if (status == "pending")
                       IconButton(
                         icon: const Icon(Icons.cancel, color: Colors.red),
                         tooltip: "Cancel Order",
@@ -107,7 +123,8 @@ class OrdersPage extends StatelessWidget {
                         Text("Price: Rs ${order['price'] ?? '0'}"),
                         Text("Address: ${order['address'] ?? 'N/A'}"),
                         Text("Date: ${order['dateTime'] ?? 'N/A'}"),
-                        Text("Status: $status"),
+                        Text("Status: $displayStatus",
+                            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     actions: [

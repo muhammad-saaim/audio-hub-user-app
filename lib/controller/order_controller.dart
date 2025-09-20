@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
-
 class OrderController extends GetxController {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -31,6 +30,7 @@ class OrderController extends GetxController {
     if (userId.isEmpty) return;
 
     try {
+      // Generate a new order ID
       String orderId = firestore
           .collection('users')
           .doc(userId)
@@ -47,11 +47,19 @@ class OrderController extends GetxController {
         "status": "Pending",
         "itemId": itemId ?? item,
         "image": image ?? '',
+        "userId": userId, // ⚡ important for admin to identify user
       };
 
+      // 1️⃣ Save in user-specific orders
       await firestore
           .collection('users')
           .doc(userId)
+          .collection('orders')
+          .doc(orderId)
+          .set(orderData);
+
+      // 2️⃣ Save in global orders collection for admin
+      await firestore
           .collection('orders')
           .doc(orderId)
           .set(orderData);
@@ -63,7 +71,7 @@ class OrderController extends GetxController {
     }
   }
 
-  /// Fetch all orders
+  /// Fetch all user orders
   Future<void> fetchUserOrders() async {
     if (userId.isEmpty) return;
 
@@ -90,14 +98,20 @@ class OrderController extends GetxController {
     if (userId.isEmpty) return;
 
     try {
-      final docRef = firestore
+      // Update user-specific order
+      final userOrderRef = firestore
           .collection('users')
           .doc(userId)
           .collection('orders')
           .doc(transactionId);
 
-      await docRef.update({'status': 'Cancelled'});
+      await userOrderRef.update({'status': 'Cancelled'});
 
+      // Update global order for admin
+      final adminOrderRef = firestore.collection('orders').doc(transactionId);
+      await adminOrderRef.update({'status': 'Cancelled'});
+
+      // Update local list
       final index = userOrders.indexWhere((o) => o['transactionId'] == transactionId);
       if (index != -1) {
         userOrders[index]['status'] = 'Cancelled';
@@ -127,7 +141,10 @@ class OrderController extends GetxController {
           .get();
 
       for (var doc in snapshot.docs) {
+        // Delete from user-specific collection
         await doc.reference.delete();
+        // Delete from global admin collection
+        await firestore.collection('orders').doc(doc.id).delete();
       }
 
       userOrders.clear();
