@@ -18,7 +18,10 @@ class User {
   @JsonKey(name: "password")
   String? password;
 
-  User({this.id, this.name, this.email, this.number, this.password});
+  @JsonKey(name: "profileImage")
+  String? profileImage; // <-- new field
+
+  User({this.id, this.name, this.email, this.number, this.password, this.profileImage});
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
   Map<String, dynamic> toJson() => _$UserToJson(this);

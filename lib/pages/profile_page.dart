@@ -1,15 +1,19 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../controller/login_controller.dart';
 import 'cart_page.dart';
 import 'edit_profile_page.dart';
 import 'orders_page.dart';
 import 'edit_address_page.dart';
+import '../utils/cloudinary_upload.dart'; // Cloudinary upload helper
 
 class ProfilePage extends StatelessWidget {
   ProfilePage({super.key});
 
   final LoginController loginCtrl = Get.find(); // Controller inject
+  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +36,47 @@ class ProfilePage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Colors.deepPurple,
-                  child: Icon(Icons.person, size: 40, color: Colors.white),
+                Stack(
+                  children: [
+                    Obx(() {
+                      final profileUrl = loginCtrl.userProfileImage.value;
+                      return CircleAvatar(
+                        radius: 35,
+                        backgroundColor: Colors.deepPurple,
+                        backgroundImage: profileUrl.isNotEmpty
+                            ? NetworkImage(profileUrl)
+                            : null,
+                        child: profileUrl.isEmpty
+                            ? const Icon(Icons.person,
+                            size: 40, color: Colors.white)
+                            : null,
+                      );
+                    }),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: () async {
+                          final XFile? pickedFile = await _picker.pickImage(
+                              source: ImageSource.gallery);
+                          if (pickedFile != null) {
+                            File imageFile = File(pickedFile.path);
+                            String? uploadedUrl =
+                            await uploadToCloudinary(imageFile);
+                            if (uploadedUrl != null) {
+                              await loginCtrl.updateProfileImage(uploadedUrl);
+                            }
+                          }
+                        },
+                        child: const CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.deepPurple,
+                          child: Icon(Icons.camera_alt,
+                              size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -68,8 +109,7 @@ class ProfilePage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const EditProfilePage(),
-                      ),
+                          builder: (context) => const EditProfilePage()),
                     );
                   },
                 )
@@ -95,8 +135,7 @@ class ProfilePage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const EditAddressPage(),
-                  ),
+                      builder: (context) => const EditAddressPage()),
                 );
               },
             ),
@@ -113,9 +152,9 @@ class ProfilePage extends StatelessWidget {
                   title: const Text("My Cart"),
                   onTap: () {
                     Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CartPage()),
-                    );
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CartPage()));
                   },
                 ),
                 ListTile(
@@ -123,16 +162,16 @@ class ProfilePage extends StatelessWidget {
                   title: const Text("My Orders"),
                   onTap: () {
                     Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => OrdersPage()),
-                    );
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => OrdersPage()));
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.logout),
                   title: const Text("Logout"),
                   onTap: () async {
-                    await loginCtrl.logout(); // ✅ Fully functional logout
+                    await loginCtrl.logout();
                   },
                 ),
               ],

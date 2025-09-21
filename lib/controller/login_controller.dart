@@ -5,10 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart' as fbAuth;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 import '../pages/login_page.dart';
 import 'cart_controller.dart';
 import 'wishlist_controller.dart';
 import 'order_controller.dart';
+import '../utils/cloudinary_upload.dart'; // Cloudinary helper
 
 class LoginController extends GetxController {
   final fbAuth.FirebaseAuth auth = fbAuth.FirebaseAuth.instance;
@@ -33,6 +35,7 @@ class LoginController extends GetxController {
   var userEmail = ''.obs;
   var userPhone = ''.obs;
   var userAddress = ''.obs;
+  var userProfileImage = ''.obs; // NEW: profile image
 
   // Loading flag for Splash/Remember Me check
   var isCheckingRememberMe = true.obs;
@@ -51,7 +54,6 @@ class LoginController extends GetxController {
     if (currentUser != null && rememberMe) {
       await loadCurrentUser();
 
-      // Initialize controllers with current user data
       if (Get.isRegistered<CartController>()) {
         await Get.find<CartController>().loadCart();
       }
@@ -87,6 +89,7 @@ class LoginController extends GetxController {
           userEmail.value = doc['email'] ?? '';
           userPhone.value = doc['number'] ?? '';
           userAddress.value = doc['address'] ?? '';
+          userProfileImage.value = doc['profileImage'] ?? ''; // NEW
         }
       }
     } catch (e) {
@@ -111,6 +114,7 @@ class LoginController extends GetxController {
       userEmail.value = '';
       userPhone.value = '';
       userAddress.value = '';
+      userProfileImage.value = ''; // NEW
 
       Get.offAll(() => const LoginPage());
     } catch (e) {
@@ -137,6 +141,7 @@ class LoginController extends GetxController {
         'email': registerEmailCtrl.text.trim(),
         'number': registerNumberCtrl.text.trim(),
         'address': '',
+        'profileImage': '', // NEW
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -167,7 +172,6 @@ class LoginController extends GetxController {
 
           await loadCurrentUser();
 
-          // Initialize controllers with current user data
           if (Get.isRegistered<CartController>()) {
             await Get.find<CartController>().loadCart();
           }
@@ -230,6 +234,19 @@ class LoginController extends GetxController {
       }
     } catch (e) {
       Get.snackbar("Error", "Failed to update address: $e");
+    }
+  }
+
+  /// NEW: Update profile image
+  Future<void> updateProfileImage(String imageUrl) async {
+    final uid = auth.currentUser?.uid;
+    if (uid != null) {
+      await firestore.collection('users').doc(uid).update({
+        'profileImage': imageUrl,
+      });
+
+      userProfileImage.value = imageUrl;
+      Get.snackbar("Success", "Profile image updated successfully");
     }
   }
 }
